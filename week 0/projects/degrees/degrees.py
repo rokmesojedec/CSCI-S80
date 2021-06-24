@@ -92,8 +92,63 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # TODO
-    raise NotImplementedError
+    # Set source as root node
+    start = Node(state=source, parent=None, action=None)
+
+    # Initialize frontier with a Queue.
+    # We use breadth-first search and hence a queue to ensure
+    # that we find the most optimal (shortest) solution
+    frontier = QueueFrontier()
+
+    # Add root node to frontier
+    frontier.add(start)
+
+    # Set of visited nodes
+    explored = set()
+
+    # List of solutions
+    solutions = []
+    
+    # Repeat until frontier is empty
+    while True:
+        if frontier.empty():
+            break
+        # Get the first node in the queue
+        node = frontier.remove()
+
+        # Mark the current node as explored by adding it to explored set
+        explored.add(node.state)
+
+        # If this is the target we seek
+        # Add the path to target to solutions list
+        if node.state == target:
+            path = []
+            targetNode = node
+            while targetNode.parent is not None:
+                path.append(targetNode.action)
+                targetNode = targetNode.parent
+            path.reverse()
+            solutions.append(path)
+            continue
+
+        # Add node's neighbors to frontier
+        for movie, person in neighbors_for_person(node.state):
+            if person is not node.state and not frontier.contains_state(
+                    person) and person not in explored:
+                Child = Node(state=person, parent=node, action=(movie, person))
+                frontier.add(Child)
+
+    # If we have 0 solutions return None
+    if len(solutions) == 0:
+        return None
+    # Otherwise loop through all solutions and return one of the shortest ones
+    else:
+        shortest_distance = None
+        for path in solutions:
+            if shortest_distance is None or \
+               len(shortest_distance) >= len(path):
+                shortest_distance = path
+        return shortest_distance
 
 
 def person_id_for_name(name):
