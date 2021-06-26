@@ -1,5 +1,6 @@
 import csv
 import sys
+import math
 
 from util import Node, StackFrontier, QueueFrontier
 
@@ -84,6 +85,19 @@ def main():
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
 
+def check_if_goal(node, target):
+    # If this is the target we seek
+    # Add the path to target to solutions list
+    if node.state == target:
+        path = []
+        targetNode = node
+        while targetNode.parent is not None:
+            path.append(targetNode.action)
+            targetNode = targetNode.parent
+        path.reverse()
+        return path
+    return None
+
 def shortest_path(source, target):
     """
     Returns the shortest list of (movie_id, person_id) pairs
@@ -98,45 +112,46 @@ def shortest_path(source, target):
     # Initialize frontier with a Queue.
     # We use breadth-first search and hence a queue to ensure
     # that we find the most optimal (shortest) solution
-    frontier = QueueFrontier()
+    
+    frontier = StackFrontier()
+    
+    # Set of visited nodes
+    explored_people = set()
+
+    # List of solutions
+    solutions = []
+
+    goal = check_if_goal(start, target)
+
+    if goal is not None: 
+        return goal
 
     # Add root node to frontier
     frontier.add(start)
 
-    # Set of visited nodes
-    explored = set()
-
-    # List of solutions
-    solutions = []
-    
     # Repeat until frontier is empty
     while True:
         if frontier.empty():
             break
         # Get the first node in the queue
         node = frontier.remove()
-
         # Mark the current node as explored by adding it to explored set
-        explored.add(node.state)
+        explored_people.add(node.state)
 
-        # If this is the target we seek
-        # Add the path to target to solutions list
-        if node.state == target:
-            path = []
-            targetNode = node
-            while targetNode.parent is not None:
-                path.append(targetNode.action)
-                targetNode = targetNode.parent
-            path.reverse()
-            solutions.append(path)
-            continue
-
+        if len(explored_people) % 1000 == 0:
+            print(len(explored_people))
+        
         # Add node's neighbors to frontier
         for movie, person in neighbors_for_person(node.state):
             if person is not node.state and not frontier.contains_state(
-                    person) and person not in explored:
+                    person) and person not in explored_people:
                 Child = Node(state=person, parent=node, action=(movie, person))
-                frontier.add(Child)
+                path = check_if_goal(Child, target)
+                if path is not None:
+                    explored_people.add(Child.state)
+                    solutions.append(path)
+                else:
+                    frontier.add(Child)
 
     # If we have 0 solutions return None
     if len(solutions) == 0:
