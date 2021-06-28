@@ -86,6 +86,12 @@ def main():
 
 
 def check_if_goal(node, target):
+    """
+    Checks if current node is the target node
+    if so returns a Path of actions to that node
+    if not returns None
+    """
+
     # If this is the target we seek
     # Add the path to target to solutions list
     if node.state == target:
@@ -97,6 +103,7 @@ def check_if_goal(node, target):
         path.reverse()
         return path
     return None
+
 
 def shortest_path(source, target):
     """
@@ -112,18 +119,17 @@ def shortest_path(source, target):
     # Initialize frontier with a Queue.
     # We use breadth-first search and hence a queue to ensure
     # that we find the most optimal (shortest) solution
-    
-    frontier = StackFrontier()
-    
+
+    frontier = QueueFrontier()
+
     # Set of visited nodes
     explored_people = set()
 
-    # List of solutions
-    solutions = []
-
+    # Check if start is target
     goal = check_if_goal(start, target)
 
-    if goal is not None: 
+    # If start is target, end search
+    if goal is not None:
         return goal
 
     # Add root node to frontier
@@ -135,35 +141,21 @@ def shortest_path(source, target):
             break
         # Get the first node in the queue
         node = frontier.remove()
+
         # Mark the current node as explored by adding it to explored set
         explored_people.add(node.state)
 
-        if len(explored_people) % 1000 == 0:
-            print(len(explored_people))
-        
         # Add node's neighbors to frontier
         for movie, person in neighbors_for_person(node.state):
-            if person is not node.state and not frontier.contains_state(
+            if not frontier.contains_state(
                     person) and person not in explored_people:
-                Child = Node(state=person, parent=node, action=(movie, person))
-                path = check_if_goal(Child, target)
+                child = Node(state=person, parent=node, action=(movie, person))
+                path = check_if_goal(child, target)
                 if path is not None:
-                    explored_people.add(Child.state)
-                    solutions.append(path)
+                    return path
                 else:
-                    frontier.add(Child)
-
-    # If we have 0 solutions return None
-    if len(solutions) == 0:
-        return None
-    # Otherwise loop through all solutions and return one of the shortest ones
-    else:
-        shortest_distance = None
-        for path in solutions:
-            if shortest_distance is None or \
-               len(shortest_distance) >= len(path):
-                shortest_distance = path
-        return shortest_distance
+                    frontier.add(child)
+    return None
 
 
 def person_id_for_name(name):
