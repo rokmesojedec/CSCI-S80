@@ -13,11 +13,15 @@ def main():
     corpus = crawl(sys.argv[1])
     ranks = sample_pagerank(corpus, DAMPING, SAMPLES)
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
+    total = 0
     for page in sorted(ranks):
+        total += ranks[page]
         print(f"  {page}: {ranks[page]:.4f}")
     ranks = iterate_pagerank(corpus, DAMPING)
     print(f"PageRank Results from Iteration")
+    total = 0
     for page in sorted(ranks):
+        total += ranks[page]
         print(f"  {page}: {ranks[page]:.4f}")
 
 
@@ -142,6 +146,16 @@ def iterate_pagerank(corpus, damping_factor):
 
     n = len(corpus)
 
+    outgoing_links_corpus = {}
+
+    # add all links as outgoing links for pages which have
+    # no outgoing links
+    for page in corpus:
+        if len(corpus[page]) == 0:
+            outgoing_links_corpus[page] = [*corpus]
+        else:
+            outgoing_links_corpus[page] = corpus[page]
+
     # intialize first ranking
     # based on equal probability for all pages
     for page in corpus:
@@ -160,7 +174,8 @@ def iterate_pagerank(corpus, damping_factor):
         rank = next
         next = {}
         for page in corpus:
-            next[page] = page_rank(corpus, damping_factor, page, rank)
+            next[page] = page_rank(outgoing_links_corpus,
+                                   damping_factor, page, rank)
     return rank
 
 
@@ -176,7 +191,7 @@ def rank_difference(current, next, delta):
     return False
 
 
-def page_rank(corpus, damping_factor, page, ranking):
+def page_rank(corpus, damping_factor, current_page, ranking):
     """
     Calculates pagerank for a page based on
     probability of a random walk and a sum of
@@ -185,12 +200,19 @@ def page_rank(corpus, damping_factor, page, ranking):
 
     n = len(corpus)
     random_walk = (1 - damping_factor) / n
-    incoming_pages = get_incoming_pages(corpus, page)
-    fromTotal = 0
-    for incoming_page in incoming_pages:
-        num_links = len(corpus[incoming_page])
-        fromTotal += ranking[incoming_page] / num_links
-    return random_walk + damping_factor * fromTotal
+
+    # get pages linking to current page
+    incoming_pages = get_incoming_pages(corpus, current_page)
+    incoming_links_total = 0
+
+    # calculate probability for each incoming page
+    for page in incoming_pages:
+        # if page has no outgoing links, assume that page links to all pages
+        # in corpus
+        num_links = (len(corpus[page]), len(corpus))[len(corpus[page]) == 0]
+        incoming_links_total += damping_factor * (ranking[page] / num_links)
+
+    return random_walk + incoming_links_total
 
 
 def get_incoming_pages(corpus, target):
@@ -206,8 +228,7 @@ def get_incoming_pages(corpus, target):
             incoming_pages.append(page)
     # if no incoming links - return all pages in corpus
     if len(incoming_pages) == 0:
-        for page in corpus:
-            incoming_pages.append(page)
+        return [*corpus]
     return incoming_pages
 
 
