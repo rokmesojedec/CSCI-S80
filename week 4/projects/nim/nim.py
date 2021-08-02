@@ -1,7 +1,6 @@
 import math
 import random
 import time
-#from typing_extensions import Required
 
 
 class Nim():
@@ -102,8 +101,11 @@ class NimAI():
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
+        # return Q value for given state and action
         try:
             return self.q[tuple(state), action]
+
+        # if no Q value exists in dictionary, return 0
         except KeyError:
             return 0
 
@@ -122,6 +124,7 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
+        # Calculate new Q value according to above formula
         self.q[tuple(state), action] = old_q + self.alpha * \
             (reward + future_rewards - old_q)
 
@@ -143,9 +146,11 @@ class NimAI():
 
         q_values = []
 
+        # for each available action get its Q value
         for action in actions:
             q_values.append(self.get_q_value(tuple(state), action))
 
+        # Return highest Q value found
         return max(q_values)
 
     def choose_action(self, state, epsilon=True):
@@ -165,12 +170,17 @@ class NimAI():
         """
         actions = Nim.available_actions(state)
 
+        # if epsilon parameter is true
         if epsilon:
+            # return a random action with probability
+            # of self.epsilon (15% default)
             if random.random() < self.epsilon:
                 return random.sample(actions, 1)[0]
 
         highest_q = None
 
+        # iterate through all available actions
+        # find action with highest q value and return it
         for action in actions:
             q = self.get_q_value(state, action)
             if highest_q is None or highest_q[0] < q:
